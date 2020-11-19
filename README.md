@@ -8,7 +8,7 @@ Inspired by [To make terrible wordsearches. | Charles Lohr's Blog](http://cnlohr
 
 ## Roadmap
 
-* Output an image to make it harder to cheat
+* ~~Output an image to make it harder to cheat~~
 * Make commandline friendly to accept arguments for size and word
 * Allow multiple words to be dis-allowed
 * Accept a partially pre-populated word search and fill in around it
@@ -20,6 +20,7 @@ It's not friendly yet. Sorry :(
 
 ```commandline
 pipenv --python 3
+pipenv install
 pipenv shell
 python arvsearth.py
 exit

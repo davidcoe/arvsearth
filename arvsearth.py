@@ -1,6 +1,8 @@
 import logging
 import random
 
+from PIL import Image, ImageDraw, ImageFont
+
 
 class WordSearch:
     def __init__(self, size=10, word="arveth"):
@@ -77,9 +79,28 @@ class WordSearch:
                 return False
         return True
 
+def build_image(word_search):
+    # TODO: This is obviously not going to work on multiple systems. Can I distribute this?
+    font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansMono-Regular.ttf", 40)
+    text = '\n'.join([' '.join(row) for row in word_search])
+    w, h = font.getsize_multiline(text)
+
+    image = Image.new("RGB", (w, h), (255, 255, 255))
+    draw = ImageDraw.Draw(image)
+
+    left, top, right, bottom = draw.multiline_textbbox((0, 0), text, font)
+    draw.multiline_text((-left / 2, -top / 2), text, font=font, fill=(0, 0, 0))
+
+    return image
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     ws = WordSearch()
 
-    print('\n' + '\n'.join([''.join(row) for row in ws.create()]))
+    word_search = ws.create()
+
+    image = build_image(word_search)
+
+    image.save('texting.png')
+
+    print('\n'.join([' '.join(row) for row in word_search]))
