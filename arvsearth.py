@@ -5,13 +5,14 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 class WordSearch:
-    def __init__(self, size=10, word="arveth"):
-        # TODO: Support a list of words
+    def __init__(self, size=10, words=["arveth", "hard"]):
         # TODO: Have a separate list of allowed characters
-        self.word = word
+        self.words = words
         self.size = size
 
     def create(self):
+        allowed_characters = list(set([char for word in self.words for char in word]))
+
         word_search = [[None for _ in range(self.size)] for _ in range(self.size)]
 
         for y in range(len(word_search)):
@@ -28,7 +29,7 @@ class WordSearch:
 
                 while retries < max_retries and not success:
                     retries += 1
-                    candidate = random.choice(self.word)
+                    candidate = random.choice(allowed_characters)
                     success = self._check(word_search, x, y, candidate)
 
                 if success:
@@ -44,39 +45,39 @@ class WordSearch:
         # e.g. with 4 char word . . . x . . . could all be potential matches (including some to the right and some left)
 
         row = word_search[y]
+        for word in self.words:
+            # Left & Reversed
+            if len(word) <= x + 1: # The word could fit to the left
+                left = ''.join(row[x + 1 - len(word):x])
+                if left + candidate == word or left + candidate == ''.join(reversed(word)):
+                    logging.debug(f'{left} and {candidate} would have caused a match on the left with {word} at {x},{y}')
+                    return False
 
-        # Left & Reversed
-        if len(self.word) <= x + 1: # The word could fit to the left
-            left = ''.join(row[x + 1 - len(self.word):x])
-            if left + candidate == self.word or left + candidate == ''.join(reversed(self.word)):
-                logging.debug(f'{left} and {candidate} would have caused a match on the left with {self.word} at {x},{y}')
-                return False
+            # Top & Reversed
+            if y >= len(word) - 1: # The word could fit above
+                t_indx = y + 1 - len(word)
+                col = ''.join([row[x] for row in word_search[t_indx:y]])
+                if col + candidate == word or col + candidate == ''.join(reversed(word)):
+                    logging.debug(f'{col} and {candidate} would have caused a match above with {word} at {x},{y}')
+                    return False
 
-        # Top & Reversed
-        if y >= len(self.word) - 1: # The word could fit above
-            t_indx = y + 1 - len(self.word)
-            col = ''.join([row[x] for row in word_search[t_indx:y]])
-            if col + candidate == self.word or col + candidate == ''.join(reversed(self.word)):
-                logging.debug(f'{col} and {candidate} would have caused a match above with {self.word} at {x},{y}')
-                return False
+            # Descending Diagonal & Reversed
+            if len(word) <= x + 1 and len(word) <= y + 1: # The word could fit diagonally descending
+                upper_y_indx = y + 1 - len(word)
+                upper_x_indx = x + 1 - len(word)
+                desc_diag = ''.join([word_search[upper_y_indx+i][upper_x_indx+i] for i in range(len(word) - 1)])
+                # logging.debug(f'{x},{y} - {desc_diag}')
+                if desc_diag + candidate == word or desc_diag + candidate == ''.join(reversed(word)):
+                    logging.debug(f'{desc_diag} and {candidate} would have caused a match on a descending diagonal with {word} at {x},{y}')
+                    return False
 
-        # Descending Diagonal & Reversed
-        if len(self.word) <= x + 1 and len(self.word) <= y + 1: # The word could fit diagonally descending
-            upper_y_indx = y + 1 - len(self.word)
-            upper_x_indx = x + 1 - len(self.word)
-            desc_diag = ''.join([word_search[upper_y_indx+i][upper_x_indx+i] for i in range(len(self.word) - 1)])
-            # logging.debug(f'{x},{y} - {desc_diag}')
-            if desc_diag + candidate == self.word or desc_diag + candidate == ''.join(reversed(self.word)):
-                logging.debug(f'{desc_diag} and {candidate} would have caused a match on a descending diagonal with {self.word} at {x},{y}')
-                return False
-
-        # # Ascending Diagonal & Reversed
-        if x + len(self.word) <= len(row) and y + 1 - len(self.word) >= 0:
-            asc_diag = ''.join([word_search[y-i][x+i] for i in range(1, len(self.word))])
-            # logging.debug(f'{x},{y} = {asc_diag}')
-            if candidate + asc_diag == self.word or candidate + asc_diag == ''.join(reversed(self.word)):
-                logging.debug(f'{candidate} and {asc_diag} would have caused a match on a ascending diagonal with {self.word} at {x},{y}')
-                return False
+            # # Ascending Diagonal & Reversed
+            if x + len(word) <= len(row) and y + 1 - len(word) >= 0:
+                asc_diag = ''.join([word_search[y-i][x+i] for i in range(1, len(word))])
+                # logging.debug(f'{x},{y} = {asc_diag}')
+                if candidate + asc_diag == word or candidate + asc_diag == ''.join(reversed(word)):
+                    logging.debug(f'{candidate} and {asc_diag} would have caused a match on a ascending diagonal with {word} at {x},{y}')
+                    return False
         return True
 
 def build_image(word_search):

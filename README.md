@@ -10,7 +10,7 @@ Inspired by [To make terrible wordsearches. | Charles Lohr's Blog](http://cnlohr
 
 * ~~Output an image to make it harder to cheat~~
 * Make commandline friendly to accept arguments for size and word
-* Allow multiple words to be dis-allowed
+* ~~Allow multiple words to be dis-allowed~~
 * Accept a partially pre-populated word search and fill in around it
 * Make it easier to create a word search that does contain, exactly once, some word(s)
 
