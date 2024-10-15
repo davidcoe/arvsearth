@@ -167,12 +167,10 @@ def build_image(word_search):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
-    ws = WordSearch(words=["CAT", "DOG", "GOD"])
+    ws = WordSearch(words=["CAT", "DOG", "GOD"]).create()
 
-    word_search = ws.create()
-
-    image = build_image(word_search)
+    image = build_image(ws)
 
     image.save('texting.png')
 
-    print('\n'.join([' '.join(row) for row in word_search]))
+    print('\n'.join([' '.join(row) for row in ws]))
