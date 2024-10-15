@@ -1,11 +1,13 @@
 import logging
 import random
+from io import BytesIO
+import urllib.request
 
 from PIL import Image, ImageDraw, ImageFont
 
 
 class WordSearch:
-    def __init__(self, size=10, words=["arveth", "hard"]):
+    def __init__(self, size=32, words=["CAT", "DOG", "GOD"]):
         # TODO: Have a separate list of allowed characters
         self.words = words
         self.size = size
@@ -13,13 +15,16 @@ class WordSearch:
     def create(self):
         allowed_characters = list(set([char for word in self.words for char in word]))
 
-        word_search = [[None for _ in range(self.size)] for _ in range(self.size)]
+        word_search = [["" for _ in range(self.size)] for _ in range(self.size)]
+
+        for word in self.words:
+            self._add_word(word_search, word)
 
         for y in range(len(word_search)):
             for x in range(len(word_search[y])):
-                # TODO: Support word searches where the words to find are already added.
-                # if word_search[y][x] is not None:
-                #     continue
+
+                if word_search[y][x]:
+                    continue
 
                 candidate = None
 
@@ -39,12 +44,75 @@ class WordSearch:
 
         return word_search
 
+    def _add_word(self, word_search, word):
+        '''
+        Add a word to the word search.
+
+        The current approach is very nieve and doesn't try to do any calculations. This would need to become more
+        complicated to handle dense puzzles.
+        :param word_search:
+        :param word:
+        :return:
+        '''
+
+        steps = [(1, 0),  # left->right
+                 (0, 1),  # up->down
+                 (1, 1),  # Descending diagonal
+                 (1, -1),  # Ascending diagonal
+                 (-1, 0),  # right->left
+                 (0, -1),  # down->up
+                 (-1, 1),  # Reverse ascending diagonal
+                 (-1, -1),  # Reverse descending diagonal
+                 ]
+
+        directions = random.choices(
+            steps,
+            weights=(100, 100, 75, 25, 10, 10, 5, 5),  # Some directions are less fun than others. Very scientific here.
+            k=50)
+
+        h = len(word_search)
+        w = len(word_search[0])
+
+        word_added = False
+        for x_direction, y_direction in directions:
+            # I could be smarter here about if the select coords will work and early return
+            x = random.randint(0, w - 1)
+            y = random.randint(0, h - 1)
+
+            positions = []
+            for i, letter in enumerate(word):
+                letter_x = x + (x_direction * i)
+                letter_y = y + (y_direction * i)
+
+                if(letter_x < 0 or w - 1 < letter_x) or (letter_y < 0 or h - 1 < letter_y) or not self._check(word_search, letter_x, letter_y, letter):
+                    # logging.debug(f'{letter_x} > {w} || {letter_y} > {h}')
+                    positions = []
+                    break
+                positions.append((letter_x, letter_y, letter))
+
+            if positions:
+                for x, y, char in positions:
+                    word_search[y][x] = char
+                    word_added = True
+                break
+        if not word_added:
+            puzzle_repr = '\n'.join([' '.join(row) for row in word_search])
+            raise ValueError(f"Couldn't add '{word}' to the puzzle.\n{puzzle_repr}")
+
     def _check(self, word_search, x, y, candidate):
         # TODO: If the word_search can arbitrarily have words (not added by top to right to down)
         # I need to check by shifting around the point by all the word sizes that would fit.
         # e.g. with 4 char word . . . x . . . could all be potential matches (including some to the right and some left)
 
         row = word_search[y]
+
+        if row[x]:
+            # If we're trying to add the same letter where it already exists, we're good
+            if row[x] is candidate:
+                return True
+            else:
+                return False
+
         for word in self.words:
             # Left & Reversed
             if len(word) <= x + 1: # The word could fit to the left
@@ -81,21 +149,24 @@ class WordSearch:
         return True
 
 def build_image(word_search):
-    # TODO: This is obviously not going to work on multiple systems. Can I distribute this?
-    font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansMono-Regular.ttf", 40)
+    font_url = 'https://github.com/google/fonts/blob/main/ofl/courierprime/CourierPrime-Regular.ttf?raw=true'
+    font = ImageFont.truetype(BytesIO(urllib.request.urlopen(font_url).read()), 40)
+
     text = '\n'.join([' '.join(row) for row in word_search])
-    w, h = font.getsize_multiline(text)
+    left, top, right, bottom = ImageDraw.Draw(Image.new("RGB", (0, 0), (255, 255, 255))).multiline_textbbox((0, 0), text, font)
 
-    image = Image.new("RGB", (w, h), (255, 255, 255))
-    draw = ImageDraw.Draw(image)
+    img = Image.new("RGB", (right, bottom), (255, 255, 255))
+    draw = ImageDraw.Draw(img)
 
-    left, top, right, bottom = draw.multiline_textbbox((0, 0), text, font)
     draw.multiline_text((-left / 2, -top / 2), text, font=font, fill=(0, 0, 0))
+    # TODO Add solution
+    ## It would be really helpful to have a solution to the puzzle that could be printed.
 
-    return image
+    return img
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
+
     ws = WordSearch()
 
     word_search = ws.create()
