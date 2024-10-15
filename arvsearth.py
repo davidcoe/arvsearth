@@ -7,9 +7,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 class WordSearch:
-    def __init__(self, size=32, words=["CAT", "DOG", "GOD"]):
+    def __init__(self, size=32, words=None):
         # TODO: Have a separate list of allowed characters
-        self.words = words
+        self.words = words or ["example"]
         self.size = size
 
     def create(self):
@@ -167,7 +167,7 @@ def build_image(word_search):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
-    ws = WordSearch()
+    ws = WordSearch(words=["CAT", "DOG", "GOD"])
 
     word_search = ws.create()
 
